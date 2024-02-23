@@ -7,6 +7,8 @@
 from random import randint, choice
 from math import floor
 from requests import request
+from time import sleep
+from os import system
 
 ###
 
@@ -41,8 +43,8 @@ def obterValorDeCarta(carta, jogador):
         if carta.startswith("Ás"):
             if jogador.jogador_local == True:
                 while True:
-                    e = int(input("Obteste um Ás. Escolhe o seu valor (1 ou 11): "))
-                    if e == 1 or e == 1:
+                    e = int(input("Obtiveste um Ás. Escolhe o seu valor (1 ou 11): "))
+                    if e == 11 or e == 1:
                         valor = e
                         break
                     else:
@@ -62,6 +64,8 @@ def darCartasAJogador(jogador):
         jogador.cartas.append(carta)
         jogador.soma_dos_valores_das_cartas += valor
 
+def limparEcra():
+    system('cls||clear')
 
 # Criar Jogadores
 
@@ -69,13 +73,56 @@ jogadores = []
 
 mesa = jogadorClasse()
 mesa.mesa = True
-darCartasAJogador(mesa)
 jogadores.append(mesa)
 
-for i in range(1,3): # mais três jogadores
+for i in range(1,4): # mais três jogadores
     j = jogadorClasse()
-    darCartasAJogador(j)
     jogadores.append(j)
 
-print(jogadores[2].cartas)
-print(jogadores[2].soma_dos_valores_das_cartas)
+localPlayer = jogadores[1]
+localPlayer.jogador_local = True # O jogador local é quem está a dar run neste programa, e é sempre o jogador 1 (sendo o 0 a mesa)
+
+# Início
+
+ronda = 0
+
+print("Bem-vindo(a) ao Blackjack Python!")
+
+while True:
+    ronda += 1
+    # Loop de Rondas
+
+    if ronda == 1:
+        input("\nIrás agora receber as tuas cartas. Analisa-as com atenção! (Enter) ") # Isto só é um input para permitir que o jogador skipe
+    else:
+        input("\nIrás agora receber duas novas cartas. Estas são as tuas cartas atuais... (Enter) ") # Isto só é um input para permitir que o jogador skipe
+
+    # Dar cartas a todos os jogadores
+
+    for j in jogadores:
+        darCartasAJogador(j)
+
+    # Mostar cartas ao jogador
+
+    print("\n---- AS TUAS CARTAS ----")
+    for carta in localPlayer.cartas:
+        print(carta)
+    print("------------------------")
+    print(f"Soma do valor das cartas: {localPlayer.soma_dos_valores_das_cartas}")
+
+    # Ações
+
+    for jogador in jogadores:
+        limparEcra()
+        if jogador.jogador_local == False:
+            # Não é o utilizador, portanto vai ser ação do bot
+            print("\n------------------------")
+            if jogador.mesa == False:
+                print(f"É A VEZ DO JOGADOR {jogadores.index(jogador)}!\n")
+            else:
+                print(f"É A VEZ DA MESA!\n")
+
+            print("------------------------")
+            sleep(5)
+    
+
