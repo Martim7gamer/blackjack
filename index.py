@@ -18,7 +18,7 @@ try:
     sons = True
 except:
     # Som falhou ao carregar
-    input("Erro: Efeitos sonoros não serão carregados. Instale o pygame (pip install pygame) para corrigir! (Enter) ")
+    input("Erro: Efeitos sonoros não serão carregados. Instala o pygame ('pip install pygame' no Terminal) para corrigir! (Enter) ")
 
 ###
 
@@ -399,7 +399,7 @@ while True:
     print("------------------------")
     if localPlayer in winners:
         print(f"Parabéns, ganhaste a ronda!\n\nAposta: {aposta}$\nGanhos: +{aposta * 1.5}$")
-        dinheiro += (aposta * 1.5)
+        dinheiro += floor(aposta * 1.5)
     else:
         print(f"Uh oh, perdeste a ronda!\n\nAposta: {aposta}$\nPerdas: -{aposta}$")
         dinheiro -= aposta
