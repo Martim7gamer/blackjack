@@ -6,9 +6,9 @@
 
 from random import randint, choice
 from math import floor
-from requests import request
 from time import sleep
 from os import system
+import threading
 
 ###
 
@@ -75,7 +75,7 @@ mesa = jogadorClasse()
 mesa.mesa = True
 jogadores.append(mesa)
 
-for i in range(1,4): # mais três jogadores
+for i in range(1,6): # mais três jogadores
     j = jogadorClasse()
     jogadores.append(j)
 
@@ -90,6 +90,10 @@ print("Bem-vindo(a) ao Blackjack Python!")
 
 while True:
     ronda += 1
+
+    limparEcra()
+    print(f"\n--- RONDA {ronda} -----------------------")
+
     # Loop de Rondas
 
     if ronda == 1:
@@ -102,6 +106,8 @@ while True:
     for j in jogadores:
         darCartasAJogador(j)
 
+    mesa.cartas.pop() # Utilizamos pop() para que a segunda carta da mesa seja apagada da sua posse, recebendo assim a mesa apenas uma carta como suposto
+
     # Mostar cartas ao jogador
 
     print("\n---- AS TUAS CARTAS ----")
@@ -110,19 +116,78 @@ while True:
     print("------------------------")
     print(f"Soma do valor das cartas: {localPlayer.soma_dos_valores_das_cartas}")
 
+    input("\nContinuar... ")
+
     # Ações
 
     for jogador in jogadores:
         limparEcra()
         if jogador.jogador_local == False:
             # Não é o utilizador, portanto vai ser ação do bot
-            print("\n------------------------")
+    
+            nome_jogador = ""
+
+            print("------------------------")
             if jogador.mesa == False:
                 print(f"É A VEZ DO JOGADOR {jogadores.index(jogador)}!\n")
             else:
                 print(f"É A VEZ DA MESA!\n")
 
-            print("------------------------")
-            sleep(5)
-    
+            print("A pensar...")
 
+            print("------------------------")
+            sleep(4)
+        else:
+            # É o utilizador
+
+            atual_opcao_index = -1
+            stop = False
+            opcao_escolhida = ""
+            opcoes = ["Perder Carta (Hit)", "Manter (Stand)"]
+
+            def mostrarInput(input_event):
+                global opcao_escolhida
+                input("")
+                opcao_escolhida = opcoes[atual_opcao_index]
+                input_event.set()  # Set the event to notify the main thread
+
+            input_event = threading.Event()
+            inputThread = threading.Thread(target=mostrarInput, args=(input_event,))
+            inputThread.start()
+
+            while True:
+                atual_opcao_index += 1
+                if atual_opcao_index >= len(opcoes): atual_opcao_index = 0
+
+                print("------------------------")
+                opcoesString = ""
+                setaString = ""
+
+                for o in opcoes:
+                    if opcoes.index(o) != 0:
+                        opcoesString += "         " + o
+                    else:
+                        opcoesString += o
+                
+                seta = "↑↑"
+
+                limparEcra()
+
+                print("É A TUA VEZ DE JOGAR! SELECIONA UMA OPÇÃO\n")
+                print(opcoesString)
+                for e in range(0, atual_opcao_index):
+                    l = len(opcoes[atual_opcao_index])
+                    setaString += "            "
+                    for k in range(0,l+1):
+                        setaString += " "
+                setaString += seta
+                print(setaString)
+                print("\n")
+                
+                if input_event.is_set():  # Check if input event is set
+                    break
+
+                sleep(0.7)
+            limparEcra()
+            sleep(5)
+            
