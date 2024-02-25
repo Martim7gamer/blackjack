@@ -342,12 +342,14 @@ while True:
             # Remove players who busted themselves
             for j in tocheck:
                 if j.soma_dos_valores_das_cartas > 21:
+                    winners.append(j)
+                    j.razao_ganhar = "A mesa estourou a sua mão"
                     tocheck.remove(j)
 
             # Identify players who win when the dealer busts
             for j in tocheck:
                 winners.append(j)
-                j.razao_ganhar = "A mesa estourou a sua mão (a sua soma foi maior que 21)"
+                j.razao_ganhar = "A mesa estourou a sua mão"
                 tocheck.remove(j)
 
     # Now, handle the remaining players
