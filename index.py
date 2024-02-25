@@ -33,9 +33,7 @@ class jogadorClasse():
         self.razao_perder = ""
         self.razao_ganhar = ""
 
-###
-
-# Lista de Cartas
+### Lista de Cartas
 
 cartas = ['Ás de Paus', '2 de Paus', '3 de Paus', '4 de Paus', '5 de Paus', '6 de Paus', '7 de Paus', '8 de Paus', '9 de Paus', '10 de Paus', 'Valete de Paus', 'Dama de Paus', 'Rei de Paus',
           'Ás de Copas', '2 de Copas', '3 de Copas', '4 de Copas', '5 de Copas', '6 de Copas', '7 de Copas', '8 de Copas', '9 de Copas', '10 de Copas', 'Valete de Copas', 'Dama de Copas', 'Rei de Copas',
@@ -178,10 +176,7 @@ while True:
 
     # Loop de Rondas
 
-    if ronda == 1:
-        input("\nIrás agora receber as tuas cartas. Analisa-as com atenção! (Enter) ") # Isto só é um input para permitir que o jogador skipe
-    else:
-        input("\nIrás agora receber duas novas cartas. Estas são as tuas cartas atuais... (Enter) ") # Isto só é um input para permitir que o jogador skipe
+    input("\nIrás agora receber as tuas cartas. Analisa-as com atenção! (Enter) ") # Isto só é um input para permitir que o jogador skipe
 
     if sons: mixer.Sound.play(mixer.Sound("select.wav"))
 
