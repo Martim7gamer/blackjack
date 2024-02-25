@@ -94,7 +94,8 @@ def hit(jogador): # Ao dar hit, o jogador recebe uma carta aleatória. Como o pr
         print(f"\n\nA soma do valor das tuas cartas agora é {jogador.soma_dos_valores_das_cartas}!\n")
         input("Continuar... ")
     else:
-        print("Escolheu a opção 'Pedir Carta (Hit)'!\n\nRecebeu uma carta.\n")
+        input("Escolheu a opção 'Pedir Carta (Hit)'!\n\nRecebeu a seguinte carta... (Enter) ")
+        print(f"\n- {nova_carta}\n")
         input("Continuar... ")
 
 def stand(jogador):
@@ -375,9 +376,9 @@ while True:
     for j in winners:
         if j.mesa == False:
             if j.jogador_local:
-                print(f"- Jogador {jogadores.index(j)} (Tu) [{j.razao_ganhar}]")
+                print(f"- Jogador {jogadores.index(j)} (Tu) - {j.soma_dos_valores_das_cartas} Pontos - [{j.razao_ganhar}]")
             else:
-                print(f"- Jogador {jogadores.index(j)} [{j.razao_ganhar}]")
+                print(f"- Jogador {jogadores.index(j)} - {j.soma_dos_valores_das_cartas} Pontos - [{j.razao_ganhar}]")
         #else:
         #    print(f"- Mesa [{j.razao_ganhar}]")
         sleep(0.75)
@@ -386,9 +387,9 @@ while True:
     for j in losers:
         if j.mesa == False:
             if j.jogador_local:
-                print(f"- Jogador {jogadores.index(j)} (Tu) [{j.razao_perder}]")
+                print(f"- Jogador {jogadores.index(j)} (Tu) - {j.soma_dos_valores_das_cartas} Pontos - [{j.razao_perder}]")
             else:
-                print(f"- Jogador {jogadores.index(j)} [{j.razao_perder}]")
+                print(f"- Jogador {jogadores.index(j)} - {j.soma_dos_valores_das_cartas} Pontos - [{j.razao_perder}]")
         #else:
         #    print(f"- Mesa [{j.razao_perder}]")
         sleep(0.75)
