@@ -371,6 +371,7 @@ while True:
     print("-----FIM DA RONDA------\n")
     input("Vamos atentar nos resultados da ronda... (Enter) ")
     print("\n")
+    print(f"Mesa: {mesa.soma_dos_valores_das_cartas} Pontos\n")
 
     print("VENCEDORES-----\n")
     for j in winners:
