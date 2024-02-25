@@ -165,6 +165,8 @@ print("\n")
 input("Começar (Enter) ")
 print("\n")
 
+limparEcra()
+
 while True:
     ronda += 1
 
@@ -186,6 +188,7 @@ while True:
     # Dar cartas a todos os jogadores
 
     cartas = cartas_originais.copy()
+
     for j in jogadores:
         if len(j.cartas) > 0: j.cartas.clear()
         j.soma_dos_valores_das_cartas = 0
@@ -194,7 +197,7 @@ while True:
 
     acao_loops = 1
 
-    while acao_loops <= 1: # Loop para as 5 ações por jogador
+    while acao_loops <= 3: # Loop para as 3 ações por jogador
         acao_loops += 1
 
         opcao_escolhida = ""
@@ -244,6 +247,8 @@ while True:
                         opcao_escolhida = "Pedir Carta (Hit)"
                     else:
                         opcao_escolhida = "Manter (Stand)"
+                elif jogador.soma_dos_valores_das_cartas == 21:
+                    opcao_escolhida = "Manter (Stand)"
                 else:
                     opcao_escolhida = "Manter (Stand)"
 
@@ -378,8 +383,8 @@ while True:
                 print(f"- Jogador {jogadores.index(j)} (Tu) [{j.razao_ganhar}]")
             else:
                 print(f"- Jogador {jogadores.index(j)} [{j.razao_ganhar}]")
-        else:
-            print(f"- Mesa [{j.razao_ganhar}]")
+        #else:
+        #    print(f"- Mesa [{j.razao_ganhar}]")
         sleep(0.75)
     sleep(1.25)
     print("\nPERDEDORES-----\n")
@@ -389,8 +394,8 @@ while True:
                 print(f"- Jogador {jogadores.index(j)} (Tu) [{j.razao_perder}]")
             else:
                 print(f"- Jogador {jogadores.index(j)} [{j.razao_perder}]")
-        else:
-            print(f"- Mesa [{j.razao_perder}]")
+        #else:
+        #    print(f"- Mesa [{j.razao_perder}]")
         sleep(0.75)
     print("\n")
     input("Continuar... ")
