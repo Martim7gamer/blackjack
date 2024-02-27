@@ -227,7 +227,7 @@ while True:
                     print(f"É A VEZ DA MESA!\nA carta visível da mesa é {upcard_card} (valendo {obterValorDeCarta(upcard_card, mesa)})")
 
                 print("\nA pensar...")
-                espera = randint(2,4)
+                espera = randint(1,3)
                 sleep(espera)
 
                 # Escolher opção (Bot)
@@ -250,7 +250,7 @@ while True:
 
                 chance_de_jogada_random = randint(1,10)
                 if jogador.mesa: chance_de_jogada_random = randint(1,23)
-                if chance_de_jogada_random == 1:
+                if jogador.soma_dos_valores_das_cartas != 21 and chance_de_jogada_random == 1:
                     opcao_escolhida = choice(opcoes)
 
                 if opcoes_funcoes[opcao_escolhida]:
