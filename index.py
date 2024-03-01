@@ -32,6 +32,7 @@ class jogadorClasse():
         self.mesa = False
         self.razao_perder = ""
         self.razao_ganhar = ""
+        self.double_down = False
 
 ### Lista de Cartas
 
@@ -107,9 +108,34 @@ def stand(jogador):
         print("Escolheu manter. Nenhumas alterações foram feitas às suas cartas.\n\n")
         input("Continuar... ")
 
+aposta = 0
+
+def doubledown(jogador):
+    global aposta
+    nova_carta = choice(cartas)
+
+    jogador.cartas.append(nova_carta)
+    jogador.soma_dos_valores_das_cartas += obterValorDeCarta(nova_carta, jogador)
+
+    cartas.remove(nova_carta) # Para que não seja escolhida de novo mais tarde
+
+    aposta = aposta * 2
+
+    jogador.double_down = True
+
+    if jogador.jogador_local == True:
+        limparEcra()
+        print("Escolheste duplicar (Double Down). A tua aposta inicial foi duplicada, recebeste uma carta e terás de manter até ao final do jogo.")
+        input("Continuar... ")
+    else:
+        print("Escolheu duplicar (Double Down). A sua aposta inicial foi duplicada, recebeu uma carta e terá de manter até ao final do jogo.")
+        input("Continuar... ")
+
+    
 opcoes_funcoes = {
     "Pedir Carta (Hit)": hit,
-    "Manter (Stand)": stand
+    "Manter (Stand)": stand,
+    "Duplicar (Double Down)": doubledown
 }
 
 #
@@ -197,7 +223,7 @@ while True:
         acao_loops += 1
 
         opcao_escolhida = ""
-        opcoes = ["Pedir Carta (Hit)", "Manter (Stand)"]
+        opcoes = ["Pedir Carta (Hit)", "Manter (Stand)", "Duplicar (Double Down)"]
 
         limparEcra()
         # Mostar cartas ao jogador
@@ -276,7 +302,7 @@ while True:
                 inputThread = threading.Thread(target=mostrarInput, args=(input_event,))
                 inputThread.start()
 
-                while True:
+                while jogador.double_down == False:
                     atual_opcao_index += 1
                     if atual_opcao_index >= len(opcoes): atual_opcao_index = 0
 
@@ -309,6 +335,9 @@ while True:
                         break
 
                     sleep(0.7)
+                if jogador.double_down == True:
+                    opcao_escolhida = "Manter (Stand)"
+
                 if opcoes_funcoes[opcao_escolhida]:
                     opcoes_funcoes[opcao_escolhida](jogador)
                 limparEcra()
