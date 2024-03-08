@@ -93,6 +93,11 @@ def hit(jogador): # Ao dar hit, o jogador recebe uma carta aleatória. Como o pr
         input("Escolheste a opção 'Pedir Carta (Hit)'!\n\nRecebeste a seguinte carta... (Enter) ")
         print(f"\n- {nova_carta}")
         print(f"\n\nA soma do valor das tuas cartas agora é {jogador.soma_dos_valores_das_cartas}!\n")
+        if sons and jogador.soma_dos_valores_das_cartas == 21:
+            mixer.Sound.play(mixer.Sound("win.wav"))
+            sleep(1.6)
+            mixer.Sound.play(mixer.Sound("blackjack.wav"))
+            
         input("Continuar... ")
     else:
         input("Escolheu a opção 'Pedir Carta (Hit)'!\n\nRecebeu a seguinte carta... (Enter) ")
@@ -119,7 +124,7 @@ def doubledown(jogador):
 
     cartas.remove(nova_carta) # Para que não seja escolhida de novo mais tarde
 
-    aposta = aposta * 2
+    if jogador.jogador_local == True: aposta = aposta * 2 # Para que, no caso dos bots, a aposta do jogador não seja afetada
 
     jogador.double_down = True
 
@@ -408,6 +413,7 @@ while True:
     for j in winners:
         if j.mesa == False:
             if j.jogador_local:
+                if sons: mixer.Sound.play(mixer.Sound("win.wav"))
                 print(f"- Jogador {jogadores.index(j)} (Tu) - {j.soma_dos_valores_das_cartas} Pontos - [{j.razao_ganhar}]")
             else:
                 print(f"- Jogador {jogadores.index(j)} - {j.soma_dos_valores_das_cartas} Pontos - [{j.razao_ganhar}]")
@@ -419,6 +425,7 @@ while True:
     for j in losers:
         if j.mesa == False:
             if j.jogador_local:
+                if sons: mixer.Sound.play(mixer.Sound("lose.wav"))
                 print(f"- Jogador {jogadores.index(j)} (Tu) - {j.soma_dos_valores_das_cartas} Pontos - [{j.razao_perder}]")
             else:
                 print(f"- Jogador {jogadores.index(j)} - {j.soma_dos_valores_das_cartas} Pontos - [{j.razao_perder}]")
