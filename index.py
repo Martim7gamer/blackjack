@@ -168,6 +168,7 @@ localPlayer.jogador_local = True # O jogador local é quem está a dar run neste
 ronda = 0
 rondas_totais = 3
 upcard_card = ""
+aposta_em_jogador = 0
 dinheiro = 0
 
 if not path.exists('database.txt'): # Se a base de dados não existir, o Python cria automaticamente
@@ -238,8 +239,25 @@ while True:
             print(carta)
         print("------------------------")
         print(f"Soma do valor das cartas: {localPlayer.soma_dos_valores_das_cartas}")
-
+        
         input("\nContinuar... ")
+
+        # Aposta em um Jogador
+
+        limparEcra()
+
+        print("\n---- APOSTA NUM JOGADOR ----")
+        print("\n\nPodes agora apostar num jogador! Se o jogador em que apostares ganhar o jogo, recebes 1/3 da tua aposta de volta, mesmo que percas!")
+        while True:
+            aposta_em_jogador_por_validar = input("\n\nInsere o número do jogador (1-5), ou 0 (nenhum) para continuares: ")
+            if aposta_em_jogador_por_validar.isnumeric() and int(aposta_em_jogador_por_validar) >= 0 and int(aposta_em_jogador_por_validar) <= 5:
+                aposta_em_jogador = int(aposta_em_jogador_por_validar)
+                break
+            else:
+                print("Erro! Tenta novamente.")
+
+        #
+
         if sons: mixer.Sound.play(mixer.Sound("select.wav"))
 
         # Ações
@@ -253,7 +271,7 @@ while True:
 
                 print("------------------------")
                 if jogador.mesa == False:
-                    print(f"É A VEZ DO JOGADOR {jogadores.index(jogador)}!")
+                    print(f"É A VEZ DO JOGADOR {jogadores.index(jogador)}!\nA carta visível deste jogador (apenas para você) é {jogador.cartas[0]} (valendo {obterValorDeCarta(jogador.cartas[0],jogador)})")
                 else:
                     print(f"É A VEZ DA MESA!\nA carta visível da mesa é {upcard_card} (valendo {obterValorDeCarta(upcard_card, mesa)})")
 
@@ -416,7 +434,10 @@ while True:
                 if sons: mixer.Sound.play(mixer.Sound("win.wav"))
                 print(f"- Jogador {jogadores.index(j)} (Tu) - {j.soma_dos_valores_das_cartas} Pontos - [{j.razao_ganhar}]")
             else:
-                print(f"- Jogador {jogadores.index(j)} - {j.soma_dos_valores_das_cartas} Pontos - [{j.razao_ganhar}]")
+                if aposta_em_jogador != jogadores.index(j):
+                    print(f"- Jogador {jogadores.index(j)} - {j.soma_dos_valores_das_cartas} Pontos - [{j.razao_ganhar}]")
+                else:
+                    print(f"- Jogador {jogadores.index(j)} (APOSTA) - {j.soma_dos_valores_das_cartas} Pontos - [{j.razao_ganhar}]")
         #else:
         #    print(f"- Mesa [{j.razao_ganhar}]")
         sleep(0.75)
@@ -428,7 +449,10 @@ while True:
                 if sons: mixer.Sound.play(mixer.Sound("lose.wav"))
                 print(f"- Jogador {jogadores.index(j)} (Tu) - {j.soma_dos_valores_das_cartas} Pontos - [{j.razao_perder}]")
             else:
-                print(f"- Jogador {jogadores.index(j)} - {j.soma_dos_valores_das_cartas} Pontos - [{j.razao_perder}]")
+                if aposta_em_jogador != jogadores.index(j):
+                    print(f"- Jogador {jogadores.index(j)} - {j.soma_dos_valores_das_cartas} Pontos - [{j.razao_perder}]")
+                else:
+                    print(f"- Jogador {jogadores.index(j)} (APOSTA) - {j.soma_dos_valores_das_cartas} Pontos - [{j.razao_perder}]")
         #else:
         #    print(f"- Mesa [{j.razao_perder}]")
         sleep(0.75)
@@ -438,11 +462,17 @@ while True:
 
     print("------------------------")
     if localPlayer in winners:
-        print(f"Parabéns, ganhaste a ronda!\n\nAposta: {aposta}$\nGanhos: +{aposta * 1.5}$")
+        print(f"Parabéns, ganhaste a ronda!\n\nAposta: {aposta}$\nGanhos: +{floor(aposta * 1.5)}$")
         dinheiro += floor(aposta * 1.5)
     else:
         print(f"Uh oh, perdeste a ronda!\n\nAposta: {aposta}$\nPerdas: -{aposta}$")
         dinheiro -= aposta
+
+    if jogadores[aposta_em_jogador] in winners:
+        dinheiro += floor(aposta / 3)
+        print(f"\nO jogador no qual apostaste venceu o jogo, pelo que tens direito a +{floor(aposta / 3)}$ adicionais!")
+
+    aposta_em_jogador = 0
 
     with open('database.txt', 'w') as file: # Atualizar a base de dados com o valor atual de dinheiro
         file.write(f"money={dinheiro}")
