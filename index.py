@@ -272,7 +272,7 @@ while True:
 
                 print("------------------------")
                 if jogador.mesa == False:
-                    print(f"É A VEZ DO JOGADOR {jogadores.index(jogador)}!\nA carta visível deste jogador (apenas para você) é {jogador.cartas[0]} (valendo {obterValorDeCarta(jogador.cartas[0],jogador)})")
+                    print(f"É A VEZ DO JOGADOR {jogadores.index(jogador)}!\nA carta visível deste jogador (apenas para ti) é {jogador.cartas[0]} (valendo {obterValorDeCarta(jogador.cartas[0],jogador)})")
                 else:
                     print(f"É A VEZ DA MESA!\nA carta visível da mesa é {upcard_card} (valendo {obterValorDeCarta(upcard_card, mesa)})")
 
