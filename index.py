@@ -250,8 +250,8 @@ while True:
             print("\n---- APOSTA NUM JOGADOR ----")
             print("\n\nPodes agora apostar num jogador! Se o jogador em que apostares ganhar o jogo, recebes 1/3\n da tua aposta de volta, mesmo que percas!")
             while True:
-                aposta_em_jogador_por_validar = input("\n\nInsere o número do jogador (1-5), ou 0 (nenhum) para continuares: ")
-                if aposta_em_jogador_por_validar.isnumeric() and int(aposta_em_jogador_por_validar) >= 0 and int(aposta_em_jogador_por_validar) <= 5:
+                aposta_em_jogador_por_validar = input("\n\nInsere o número do jogador (2-5), ou 0 (nenhum) para continuares: ")
+                if aposta_em_jogador_por_validar.isnumeric() and int(aposta_em_jogador_por_validar) >= 0 and int(aposta_em_jogador_por_validar) <= 5 and int(aposta_em_jogador_por_validar) == 2:
                     aposta_em_jogador = int(aposta_em_jogador_por_validar)
                     break
                 else:
