@@ -8,6 +8,8 @@ from random import randint, choice
 from math import floor
 from time import sleep
 from os import system, path
+from datetime import datetime
+import time
 import threading
 
 sons = False
@@ -19,6 +21,12 @@ try:
 except:
     # Som falhou ao carregar
     input("Erro: Efeitos sonoros não serão carregados. Instala o pygame ('pip install pygame' no Terminal) para corrigir! (Enter) ")
+try:
+    from prettytable import PrettyTable
+except:
+    # Pretty Table não está instalada
+    input("Erro: Jogo não pode ser iniciado sem a biblioteca PrettyTable. Instala o prettytable ('pip install prettytable' no Terminal) para corrigir! (Enter) ")
+    exit()
 
 ###
 
@@ -42,6 +50,36 @@ cartas = ['Ás de Paus', '2 de Paus', '3 de Paus', '4 de Paus', '5 de Paus', '6 
           'Ás de Espadas', '2 de Espadas', '3 de Espadas', '4 de Espadas', '5 de Espadas', '6 de Espadas', '7 de Espadas', '8 de Espadas', '9 de Espadas', '10 de Espadas', 'Valete de Espadas', 'Dama de Espadas', 'Rei de Espadas']
 
 cartas_originais = cartas.copy()
+
+def returnHistoryInDictionary():
+    try:
+        with open('database_history.txt', 'r') as file:
+            input_string = file.read()
+
+            # Step 1: Remove the curly braces and split by commas to get each record
+            records = input_string.strip('{}').split('},{')
+
+            # Step 2: Initialize a list to hold all dictionaries
+            all_dicts = []
+
+            # Step 3: Process each record
+            for record in records:
+                # Step 4: Split by semicolons to get key-value pairs
+                pairs = record.split(';')
+                # Step 5: Create a dictionary for the current record
+                record_dict = {}
+                for pair in pairs:
+                    # Step 6: Split by colon to get the key and value
+                    key, value = pair.split(':')
+                    # Store the key-value pair in the dictionary
+                    record_dict[key] = value
+                # Add the current record dictionary to the list
+                all_dicts.append(record_dict)
+
+            # Now `all_dicts` contains all the records as dictionaries
+            return all_dicts
+    except:
+        return []
 
 def obterValorDeCarta(carta, jogador):
     primeiro_caracter = carta[0]
@@ -175,6 +213,10 @@ if not path.exists('database.txt'): # Se a base de dados não existir, o Python 
     with open('database.txt', 'w') as file:
         file.write("money=50") # Valor inicial do dinheiro
 
+if not path.exists('database_history.txt'): # Se a base de dados não existir, o Python cria automaticamente
+    with open('database_history.txt', 'w') as file:
+        file.write("{}") # Valor inicial do dinheiro
+
 with open('database.txt', 'r') as file:
     # Ler a base de dados para obter o dinheiro guardado da sessão passada
     conteudo = file.read()
@@ -190,13 +232,50 @@ with open('database.txt', 'r') as file:
 
 limparEcra()
 
-print("Bem-vindo(a) ao Blackjack Python!")
-print(f"O teu dinheiro: {dinheiro}$")
-print("\n")
-input("Começar (Enter) ")
-print("\n")
+while True:
+    print("Bem-vindo(a) ao Blackjack Python!")
+    print(f"O teu dinheiro: {dinheiro}$")
+    print("\n")
+    print("1) Começar ")
+    print("\n2) Histórico de Jogo\n\n")
+    while True:
+        menu_escolha = input("Seleciona uma opção (1-2): ")
+        if menu_escolha.isnumeric() and int(menu_escolha) >= 1 and int(menu_escolha) <= 2:
+            menu_escolha = int(menu_escolha)
+            break;
+        else:
+            print("Opção não reconhecida! Tenta novamente")
+    print("\n")
 
-limparEcra()
+    limparEcra()
+
+    if menu_escolha == 1:
+        break
+    elif menu_escolha == 2:
+        print("---- HISTÓRICO DE JOGO ----\n\n")
+        
+        table = PrettyTable()
+        table.field_names = ["Data", "Nº Cartas", "Pontos", "Aposta", "Lucro", "Total Dinheiro", "Resultado"]
+        
+        history = returnHistoryInDictionary()
+
+        for record in history:
+            result_text = "Vitória" if record["result"] == "1" else "Derrota"
+            date_text = datetime.fromtimestamp(int(floor(float(record["date"])))).strftime("%d/%m/%Y | %H:%M")
+
+            table.add_row([
+                date_text,
+                record["cards"],
+                record["points"],
+                record["bet"] + "$",
+                record["profit"] + "$",
+                record["total-money"] + "$",
+                result_text,
+            ])
+
+        print(table)
+        input("\n\nContinuar (Enter) ")
+        limparEcra()
 
 while True:
     ronda += 1
@@ -244,14 +323,14 @@ while True:
 
         # Aposta em um Jogador
 
-        if acao_loops != 2:
+        if acao_loops != 2 and aposta_em_jogador == 0:
             limparEcra()
 
             print("\n---- APOSTA NUM JOGADOR ----")
             print("\n\nPodes agora apostar num jogador! Se o jogador em que apostares ganhar o jogo, recebes 1/3\n da tua aposta de volta, mesmo que percas!")
             while True:
                 aposta_em_jogador_por_validar = input("\n\nInsere o número do jogador (2-5), ou 0 (nenhum) para continuares: ")
-                if aposta_em_jogador_por_validar.isnumeric() and int(aposta_em_jogador_por_validar) >= 0 and int(aposta_em_jogador_por_validar) <= 5 and int(aposta_em_jogador_por_validar) == 2:
+                if aposta_em_jogador_por_validar.isnumeric() and int(aposta_em_jogador_por_validar) >= 0 and int(aposta_em_jogador_por_validar) <= 5 and int(aposta_em_jogador_por_validar) != 1:
                     aposta_em_jogador = int(aposta_em_jogador_por_validar)
                     break
                 else:
@@ -461,21 +540,45 @@ while True:
     input("Continuar... ")
     limparEcra()
 
+    profits = 0
+
     print("------------------------")
     if localPlayer in winners:
         print(f"Parabéns, ganhaste a ronda!\n\nAposta: {aposta}$\nGanhos: +{floor(aposta * 1.5)}$")
         dinheiro += floor(aposta * 1.5)
+        profits += floor(aposta * 1.5)
     else:
         print(f"Uh oh, perdeste a ronda!\n\nAposta: {aposta}$\nPerdas: -{aposta}$")
         dinheiro -= aposta
+        profits -= aposta
 
     if jogadores[aposta_em_jogador] in winners:
         dinheiro += floor(aposta / 3)
+        profits += floor(aposta / 3)
         print(f"\nO jogador no qual apostaste venceu o jogo, pelo que tens direito a +{floor(aposta / 3)}$ adicionais!")
 
     aposta_em_jogador = 0
 
+    history_winner_value = 0
+    if localPlayer in winners: history_winner_value = 1
+    history_input_to_add = "{date:" + str(time.time()) + ";cards:" + str(len(localPlayer.cartas)) + ";points:" + str(localPlayer.soma_dos_valores_das_cartas) + ";profit:" + str(profits) + ";total-money:" + str(dinheiro) + ";result:" + str(history_winner_value) + ";bet:" + str(aposta) + "}"
+
     with open('database.txt', 'w') as file: # Atualizar a base de dados com o valor atual de dinheiro
         file.write(f"money={dinheiro}")
+
+    with open('database_history.txt', 'r') as file:
+        content = file.read().strip()
+
+    # Check if the file is empty or not
+    if content == "{}":
+        # File has only initial content '{}', replace it with the new entry
+        updated_content = history_input_to_add
+    else:
+        # File has content, append a comma and then the new entry
+        updated_content = f"{content[:-1]},{history_input_to_add}}}"
+
+    # Open the file in write mode to update it
+    with open('database_history.txt', 'w') as file:
+        file.write(updated_content)
 
     input("Continuar... ")
