@@ -203,8 +203,6 @@ localPlayer.jogador_local = True # O jogador local é quem está a dar run neste
 
 # Início
 
-ronda = 0
-rondas_totais = 3
 upcard_card = ""
 aposta_em_jogador = 0
 dinheiro = 0
@@ -250,9 +248,315 @@ while True:
     limparEcra()
 
     if menu_escolha == 1:
-        break
+        while True:
+            limparEcra()
+            print(f"\n---- VAMOS LÁ! ----")
+
+            game_start_time = time.time()
+
+            aposta = float(input("Quanto dinheiro gostarias de apostar? "))
+            aposta = floor(aposta)
+
+            # Loop de Rondas
+
+            input("\nIrás agora receber as tuas cartas. Analisa-as com atenção! (Enter) ") # Isto só é um input para permitir que o jogador skipe
+
+            if sons: mixer.Sound.play(mixer.Sound("select.wav"))
+
+            # Dar cartas a todos os jogadores
+
+            cartas = cartas_originais.copy()
+
+            for j in jogadores:
+                if len(j.cartas) > 0: j.cartas.clear()
+                j.soma_dos_valores_das_cartas = 0
+                darCartasAJogador(j)
+            upcard_card = mesa.cartas[0]
+
+            acao_loops = 1
+
+            while acao_loops <= 3: # Loop para as 3 ações por jogador
+                acao_loops += 1
+
+                opcao_escolhida = ""
+                opcoes = ["Pedir Carta (Hit)", "Manter (Stand)", "Duplicar (Double Down)"]
+
+                limparEcra()
+                # Mostar cartas ao jogador
+
+                print("\n---- AS TUAS CARTAS ----")
+                for carta in localPlayer.cartas:
+                    print(carta)
+                print("------------------------")
+                print(f"Soma do valor das cartas: {localPlayer.soma_dos_valores_das_cartas}")
+                
+                input("\nContinuar... ")
+
+                # Aposta em um Jogador
+
+                if acao_loops != 2 and aposta_em_jogador == 0:
+                    limparEcra()
+
+                    print("\n---- APOSTA NUM JOGADOR ----")
+                    print("\n\nPodes agora apostar num jogador! Se o jogador em que apostares ganhar o jogo, recebes 1/3\n da tua aposta de volta, mesmo que percas!")
+                    while True:
+                        aposta_em_jogador_por_validar = input("\n\nInsere o número do jogador (2-5), ou 0 (nenhum) para continuares: ")
+                        if aposta_em_jogador_por_validar.isnumeric() and int(aposta_em_jogador_por_validar) >= 0 and int(aposta_em_jogador_por_validar) <= 5 and int(aposta_em_jogador_por_validar) != 1:
+                            aposta_em_jogador = int(aposta_em_jogador_por_validar)
+                            break
+                        else:
+                            print("Erro! Tenta novamente.")
+
+                #
+
+                if sons: mixer.Sound.play(mixer.Sound("select.wav"))
+
+                # Ações
+
+                for jogador in jogadores:
+                    limparEcra()
+                    if jogador.jogador_local == False:
+                        # Não é o utilizador, portanto vai ser ação do bot
+                
+                        nome_jogador = ""
+
+                        print("------------------------")
+                        if jogador.mesa == False:
+                            print(f"É A VEZ DO JOGADOR {jogadores.index(jogador)}!\nA carta visível deste jogador (apenas para ti) é {jogador.cartas[0]} (valendo {obterValorDeCarta(jogador.cartas[0],jogador)})")
+                        else:
+                            print(f"É A VEZ DA MESA!\nA carta visível da mesa é {upcard_card} (valendo {obterValorDeCarta(upcard_card, mesa)})")
+
+                        print("\nA pensar...")
+                        espera = randint(1,3)
+                        sleep(espera)
+
+                        # Escolher opção (Bot)
+
+                        #If hand total is 11 or lower: Always Hit, as there's little risk of busting with such a low hand total.
+                        #If hand total is 12 to 16 (inclusive): Consider the dealer's upcard. If the dealer's upcard is 7 or higher, Hit; otherwise, Stand. This is because the dealer has a good chance of having a strong hand when their upcard is 7 or higher, so the player should try to improve their hand.
+                        #If hand total is 17 or higher: Stand, as the risk of busting is higher with a hand total of 17 or above.
+
+                        if jogador.soma_dos_valores_das_cartas <= 11:
+                            opcao_escolhida = "Pedir Carta (Hit)"
+                        elif jogador.soma_dos_valores_das_cartas >= 12 and jogador.soma_dos_valores_das_cartas <= 16:
+                            if obterValorDeCarta(upcard_card, jogador) >= 7:
+                                opcao_escolhida = "Pedir Carta (Hit)"
+                            else:
+                                opcao_escolhida = "Manter (Stand)"
+                        elif jogador.soma_dos_valores_das_cartas == 21:
+                            opcao_escolhida = "Manter (Stand)"
+                        else:
+                            opcao_escolhida = "Manter (Stand)"
+
+                        chance_de_jogada_random = randint(1,10)
+                        if jogador.mesa: chance_de_jogada_random = randint(1,23)
+                        if jogador.soma_dos_valores_das_cartas != 21 and chance_de_jogada_random == 1:
+                            opcao_escolhida = choice(opcoes)
+
+                        if opcoes_funcoes[opcao_escolhida]:
+                            opcoes_funcoes[opcao_escolhida](jogador)
+
+                        #
+
+                        print("------------------------")
+                    else:
+                        # É o utilizador
+
+                        atual_opcao_index = -1
+                        stop = False
+
+                        def mostrarInput(input_event):
+                            global opcao_escolhida
+                            input("")
+                            if sons: mixer.Sound.play(mixer.Sound("select.wav"))
+                            opcao_escolhida = opcoes[atual_opcao_index]
+                            input_event.set()  # Set the event to notify the main thread
+
+                        input_event = threading.Event()
+                        inputThread = threading.Thread(target=mostrarInput, args=(input_event,))
+                        inputThread.start()
+
+                        while jogador.double_down == False:
+                            atual_opcao_index += 1
+                            if atual_opcao_index >= len(opcoes): atual_opcao_index = 0
+
+                            opcoesString = ""
+                            setaString = ""
+
+                            for o in opcoes:
+                                if opcoes.index(o) != 0:
+                                    opcoesString += "          " + o
+                                else:
+                                    opcoesString += o
+                            
+                            seta = "↑↑"
+
+                            limparEcra()
+
+                            print("------------------------")
+                            print("É A TUA VEZ DE JOGAR!\nSELECIONA UMA OPÇÃO\n")
+                            print(opcoesString)
+                            for e in range(0, atual_opcao_index):
+                                l = len(opcoes[atual_opcao_index])
+                                setaString += "            "
+                                for k in range(0,l+1):
+                                    setaString += " "
+                            setaString += seta
+                            print(setaString)
+                            print("\n")
+                            
+                            if input_event.is_set():  # Check if input event is set
+                                break
+
+                            sleep(0.7)
+                        if jogador.double_down == True:
+                            opcao_escolhida = "Manter (Stand)"
+
+                        if opcoes_funcoes[opcao_escolhida]:
+                            opcoes_funcoes[opcao_escolhida](jogador)
+                        limparEcra()
+                        sleep(0.5)
+            limparEcra()
+
+            tocheck = jogadores.copy()  # Includes players that need to be determined if they won or lost (including the dealer)
+            winners = []
+            losers = []
+
+            if mesa.soma_dos_valores_das_cartas == 21:  # Dealer has Blackjack! Any player who doesn't have Blackjack loses.
+                mesa.razao_ganhar = "Conseguiu o Blackjack"
+                tocheck.remove(mesa)
+                for j in tocheck:
+                    if j.soma_dos_valores_das_cartas != 21:
+                        losers.append(j)
+                        j.razao_perder = "A mesa obteu o Blackjack, enquanto o jogador não o conseguiu fazer"
+            else:
+                # If the dealer doesn't have Blackjack...
+                for j in tocheck:
+                    if j.soma_dos_valores_das_cartas == 21:
+                        winners.append(j)
+                        j.razao_ganhar = "Conseguiu o Blackjack"
+                        tocheck.remove(j)
+
+                if mesa.soma_dos_valores_das_cartas > 21:
+                    losers.append(mesa)
+                    mesa.razao_perder = "Estourou (Bust)"
+                    tocheck.remove(mesa)
+
+                    # Remove players who busted themselves
+                    for j in tocheck:
+                        if j.soma_dos_valores_das_cartas > 21:
+                            winners.append(j)
+                            j.razao_ganhar = "A mesa estourou a sua mão"
+                            tocheck.remove(j)
+
+                    # Identify players who win when the dealer busts
+                    for j in tocheck:
+                        winners.append(j)
+                        j.razao_ganhar = "A mesa estourou a sua mão"
+                        tocheck.remove(j)
+
+            # Now, handle the remaining players
+            for j in tocheck:
+                if j.soma_dos_valores_das_cartas > 21:
+                    losers.append(j)
+                    j.razao_perder = "Estourou (Bust)"
+                elif j != mesa and j.soma_dos_valores_das_cartas <= 21:
+                    if mesa.soma_dos_valores_das_cartas > 21:
+                        winners.append(j)
+                        j.razao_ganhar = "Mão maior que a mesa (Mesa estourou)"
+                    elif j.soma_dos_valores_das_cartas > mesa.soma_dos_valores_das_cartas:
+                        winners.append(j)
+                        j.razao_ganhar = "Maior mão que a mesa"
+                    else:
+                        losers.append(j)
+                        j.razao_perder = "Mão menor ou igual à mesa"
+
+            # Mostrar resultados
+
+            print("-----FIM DA RONDA------\n")
+            input("Vamos atentar nos resultados da ronda... (Enter) ")
+            print("\n")
+            print(f"Mesa: {mesa.soma_dos_valores_das_cartas} Pontos\n")
+
+            print("VENCEDORES-----\n")
+            for j in winners:
+                if j.mesa == False:
+                    if j.jogador_local:
+                        if sons: mixer.Sound.play(mixer.Sound("win.wav"))
+                        print(f"- Jogador {jogadores.index(j)} (Tu) - {j.soma_dos_valores_das_cartas} Pontos - [{j.razao_ganhar}]")
+                    else:
+                        if aposta_em_jogador != jogadores.index(j):
+                            print(f"- Jogador {jogadores.index(j)} - {j.soma_dos_valores_das_cartas} Pontos - [{j.razao_ganhar}]")
+                        else:
+                            print(f"- Jogador {jogadores.index(j)} (APOSTA) - {j.soma_dos_valores_das_cartas} Pontos - [{j.razao_ganhar}]")
+                #else:
+                #    print(f"- Mesa [{j.razao_ganhar}]")
+                sleep(0.75)
+            sleep(1.25)
+            print("\nPERDEDORES-----\n")
+            for j in losers:
+                if j.mesa == False:
+                    if j.jogador_local:
+                        if sons: mixer.Sound.play(mixer.Sound("lose.wav"))
+                        print(f"- Jogador {jogadores.index(j)} (Tu) - {j.soma_dos_valores_das_cartas} Pontos - [{j.razao_perder}]")
+                    else:
+                        if aposta_em_jogador != jogadores.index(j):
+                            print(f"- Jogador {jogadores.index(j)} - {j.soma_dos_valores_das_cartas} Pontos - [{j.razao_perder}]")
+                        else:
+                            print(f"- Jogador {jogadores.index(j)} (APOSTA) - {j.soma_dos_valores_das_cartas} Pontos - [{j.razao_perder}]")
+                #else:
+                #    print(f"- Mesa [{j.razao_perder}]")
+                sleep(0.75)
+            print("\n")
+            input("Continuar... ")
+            limparEcra()
+
+            profits = 0
+
+            print("------------------------")
+            if localPlayer in winners:
+                print(f"Parabéns, ganhaste a ronda!\n\nAposta: {aposta}$\nGanhos: +{floor(aposta * 1.5)}$")
+                dinheiro += floor(aposta * 1.5)
+                profits += floor(aposta * 1.5)
+            else:
+                print(f"Uh oh, perdeste a ronda!\n\nAposta: {aposta}$\nPerdas: -{aposta}$")
+                dinheiro -= aposta
+                profits -= aposta
+
+            if jogadores[aposta_em_jogador] in winners:
+                dinheiro += floor(aposta / 3)
+                profits += floor(aposta / 3)
+                print(f"\nO jogador no qual apostaste venceu o jogo, pelo que tens direito a +{floor(aposta / 3)}$ adicionais!")
+
+            aposta_em_jogador = 0
+
+            history_winner_value = 0
+            if localPlayer in winners: history_winner_value = 1
+            history_input_to_add = "{date:" + str(game_start_time) + ";cards:" + str(len(localPlayer.cartas)) + ";points:" + str(localPlayer.soma_dos_valores_das_cartas) + ";profit:" + str(profits) + ";total-money:" + str(dinheiro) + ";result:" + str(history_winner_value) + ";bet:" + str(aposta) + "}"
+
+            with open('database.txt', 'w') as file: # Atualizar a base de dados com o valor atual de dinheiro
+                file.write(f"money={dinheiro}")
+
+            with open('database_history.txt', 'r') as file:
+                content = file.read().strip()
+
+            # Check if the file is empty or not
+            if content == "{}":
+                # File has only initial content '{}', replace it with the new entry
+                updated_content = history_input_to_add
+            else:
+                # File has content, append a comma and then the new entry
+                updated_content = f"{content},{history_input_to_add}}}"
+
+            # Open the file in write mode to update it
+            with open('database_history.txt', 'w') as file:
+                file.write(updated_content)
+
+            input("Continuar... ")
+            limparEcra()
+            break
     elif menu_escolha == 2:
-        print("---- HISTÓRICO DE JOGO ----\n\n")
+        print("---- HISTÓRICO DE JOGO ----\n")
         
         table = PrettyTable()
         table.field_names = ["Data", "Nº Cartas", "Pontos", "Aposta", "Lucro", "Total Dinheiro", "Resultado"]
@@ -276,309 +580,3 @@ while True:
         print(table)
         input("\n\nContinuar (Enter) ")
         limparEcra()
-
-while True:
-    ronda += 1
-
-    limparEcra()
-    print(f"\n--- RONDA {ronda} / {rondas_totais} -----------------------")
-
-    aposta = float(input("Quanto dinheiro gostarias de apostar? "))
-    aposta = floor(aposta)
-
-    # Loop de Rondas
-
-    input("\nIrás agora receber as tuas cartas. Analisa-as com atenção! (Enter) ") # Isto só é um input para permitir que o jogador skipe
-
-    if sons: mixer.Sound.play(mixer.Sound("select.wav"))
-
-    # Dar cartas a todos os jogadores
-
-    cartas = cartas_originais.copy()
-
-    for j in jogadores:
-        if len(j.cartas) > 0: j.cartas.clear()
-        j.soma_dos_valores_das_cartas = 0
-        darCartasAJogador(j)
-    upcard_card = mesa.cartas[0]
-
-    acao_loops = 1
-
-    while acao_loops <= 3: # Loop para as 3 ações por jogador
-        acao_loops += 1
-
-        opcao_escolhida = ""
-        opcoes = ["Pedir Carta (Hit)", "Manter (Stand)", "Duplicar (Double Down)"]
-
-        limparEcra()
-        # Mostar cartas ao jogador
-
-        print("\n---- AS TUAS CARTAS ----")
-        for carta in localPlayer.cartas:
-            print(carta)
-        print("------------------------")
-        print(f"Soma do valor das cartas: {localPlayer.soma_dos_valores_das_cartas}")
-        
-        input("\nContinuar... ")
-
-        # Aposta em um Jogador
-
-        if acao_loops != 2 and aposta_em_jogador == 0:
-            limparEcra()
-
-            print("\n---- APOSTA NUM JOGADOR ----")
-            print("\n\nPodes agora apostar num jogador! Se o jogador em que apostares ganhar o jogo, recebes 1/3\n da tua aposta de volta, mesmo que percas!")
-            while True:
-                aposta_em_jogador_por_validar = input("\n\nInsere o número do jogador (2-5), ou 0 (nenhum) para continuares: ")
-                if aposta_em_jogador_por_validar.isnumeric() and int(aposta_em_jogador_por_validar) >= 0 and int(aposta_em_jogador_por_validar) <= 5 and int(aposta_em_jogador_por_validar) != 1:
-                    aposta_em_jogador = int(aposta_em_jogador_por_validar)
-                    break
-                else:
-                    print("Erro! Tenta novamente.")
-
-        #
-
-        if sons: mixer.Sound.play(mixer.Sound("select.wav"))
-
-        # Ações
-
-        for jogador in jogadores:
-            limparEcra()
-            if jogador.jogador_local == False:
-                # Não é o utilizador, portanto vai ser ação do bot
-        
-                nome_jogador = ""
-
-                print("------------------------")
-                if jogador.mesa == False:
-                    print(f"É A VEZ DO JOGADOR {jogadores.index(jogador)}!\nA carta visível deste jogador (apenas para ti) é {jogador.cartas[0]} (valendo {obterValorDeCarta(jogador.cartas[0],jogador)})")
-                else:
-                    print(f"É A VEZ DA MESA!\nA carta visível da mesa é {upcard_card} (valendo {obterValorDeCarta(upcard_card, mesa)})")
-
-                print("\nA pensar...")
-                espera = randint(1,3)
-                sleep(espera)
-
-                # Escolher opção (Bot)
-
-                #If hand total is 11 or lower: Always Hit, as there's little risk of busting with such a low hand total.
-                #If hand total is 12 to 16 (inclusive): Consider the dealer's upcard. If the dealer's upcard is 7 or higher, Hit; otherwise, Stand. This is because the dealer has a good chance of having a strong hand when their upcard is 7 or higher, so the player should try to improve their hand.
-                #If hand total is 17 or higher: Stand, as the risk of busting is higher with a hand total of 17 or above.
-
-                if jogador.soma_dos_valores_das_cartas <= 11:
-                    opcao_escolhida = "Pedir Carta (Hit)"
-                elif jogador.soma_dos_valores_das_cartas >= 12 and jogador.soma_dos_valores_das_cartas <= 16:
-                    if obterValorDeCarta(upcard_card, jogador) >= 7:
-                        opcao_escolhida = "Pedir Carta (Hit)"
-                    else:
-                        opcao_escolhida = "Manter (Stand)"
-                elif jogador.soma_dos_valores_das_cartas == 21:
-                    opcao_escolhida = "Manter (Stand)"
-                else:
-                    opcao_escolhida = "Manter (Stand)"
-
-                chance_de_jogada_random = randint(1,10)
-                if jogador.mesa: chance_de_jogada_random = randint(1,23)
-                if jogador.soma_dos_valores_das_cartas != 21 and chance_de_jogada_random == 1:
-                    opcao_escolhida = choice(opcoes)
-
-                if opcoes_funcoes[opcao_escolhida]:
-                    opcoes_funcoes[opcao_escolhida](jogador)
-
-                #
-
-                print("------------------------")
-            else:
-                # É o utilizador
-
-                atual_opcao_index = -1
-                stop = False
-
-                def mostrarInput(input_event):
-                    global opcao_escolhida
-                    input("")
-                    if sons: mixer.Sound.play(mixer.Sound("select.wav"))
-                    opcao_escolhida = opcoes[atual_opcao_index]
-                    input_event.set()  # Set the event to notify the main thread
-
-                input_event = threading.Event()
-                inputThread = threading.Thread(target=mostrarInput, args=(input_event,))
-                inputThread.start()
-
-                while jogador.double_down == False:
-                    atual_opcao_index += 1
-                    if atual_opcao_index >= len(opcoes): atual_opcao_index = 0
-
-                    opcoesString = ""
-                    setaString = ""
-
-                    for o in opcoes:
-                        if opcoes.index(o) != 0:
-                            opcoesString += "          " + o
-                        else:
-                            opcoesString += o
-                    
-                    seta = "↑↑"
-
-                    limparEcra()
-
-                    print("------------------------")
-                    print("É A TUA VEZ DE JOGAR!\nSELECIONA UMA OPÇÃO\n")
-                    print(opcoesString)
-                    for e in range(0, atual_opcao_index):
-                        l = len(opcoes[atual_opcao_index])
-                        setaString += "            "
-                        for k in range(0,l+1):
-                            setaString += " "
-                    setaString += seta
-                    print(setaString)
-                    print("\n")
-                    
-                    if input_event.is_set():  # Check if input event is set
-                        break
-
-                    sleep(0.7)
-                if jogador.double_down == True:
-                    opcao_escolhida = "Manter (Stand)"
-
-                if opcoes_funcoes[opcao_escolhida]:
-                    opcoes_funcoes[opcao_escolhida](jogador)
-                limparEcra()
-                sleep(0.5)
-    limparEcra()
-
-    tocheck = jogadores.copy()  # Includes players that need to be determined if they won or lost (including the dealer)
-    winners = []
-    losers = []
-
-    if mesa.soma_dos_valores_das_cartas == 21:  # Dealer has Blackjack! Any player who doesn't have Blackjack loses.
-        mesa.razao_ganhar = "Conseguiu o Blackjack"
-        tocheck.remove(mesa)
-        for j in tocheck:
-            if j.soma_dos_valores_das_cartas != 21:
-                losers.append(j)
-                j.razao_perder = "A mesa obteu o Blackjack, enquanto o jogador não o conseguiu fazer"
-    else:
-        # If the dealer doesn't have Blackjack...
-        for j in tocheck:
-            if j.soma_dos_valores_das_cartas == 21:
-                winners.append(j)
-                j.razao_ganhar = "Conseguiu o Blackjack"
-                tocheck.remove(j)
-
-        if mesa.soma_dos_valores_das_cartas > 21:
-            losers.append(mesa)
-            mesa.razao_perder = "Estourou (Bust)"
-            tocheck.remove(mesa)
-
-            # Remove players who busted themselves
-            for j in tocheck:
-                if j.soma_dos_valores_das_cartas > 21:
-                    winners.append(j)
-                    j.razao_ganhar = "A mesa estourou a sua mão"
-                    tocheck.remove(j)
-
-            # Identify players who win when the dealer busts
-            for j in tocheck:
-                winners.append(j)
-                j.razao_ganhar = "A mesa estourou a sua mão"
-                tocheck.remove(j)
-
-    # Now, handle the remaining players
-    for j in tocheck:
-        if j.soma_dos_valores_das_cartas > 21:
-            losers.append(j)
-            j.razao_perder = "Estourou (Bust)"
-        elif j != mesa and j.soma_dos_valores_das_cartas <= 21:
-            if mesa.soma_dos_valores_das_cartas > 21:
-                winners.append(j)
-                j.razao_ganhar = "Mão maior que a mesa (Mesa estourou)"
-            elif j.soma_dos_valores_das_cartas > mesa.soma_dos_valores_das_cartas:
-                winners.append(j)
-                j.razao_ganhar = "Maior mão que a mesa"
-            else:
-                losers.append(j)
-                j.razao_perder = "Mão menor ou igual à mesa"
-
-    # Mostrar resultados
-
-    print("-----FIM DA RONDA------\n")
-    input("Vamos atentar nos resultados da ronda... (Enter) ")
-    print("\n")
-    print(f"Mesa: {mesa.soma_dos_valores_das_cartas} Pontos\n")
-
-    print("VENCEDORES-----\n")
-    for j in winners:
-        if j.mesa == False:
-            if j.jogador_local:
-                if sons: mixer.Sound.play(mixer.Sound("win.wav"))
-                print(f"- Jogador {jogadores.index(j)} (Tu) - {j.soma_dos_valores_das_cartas} Pontos - [{j.razao_ganhar}]")
-            else:
-                if aposta_em_jogador != jogadores.index(j):
-                    print(f"- Jogador {jogadores.index(j)} - {j.soma_dos_valores_das_cartas} Pontos - [{j.razao_ganhar}]")
-                else:
-                    print(f"- Jogador {jogadores.index(j)} (APOSTA) - {j.soma_dos_valores_das_cartas} Pontos - [{j.razao_ganhar}]")
-        #else:
-        #    print(f"- Mesa [{j.razao_ganhar}]")
-        sleep(0.75)
-    sleep(1.25)
-    print("\nPERDEDORES-----\n")
-    for j in losers:
-        if j.mesa == False:
-            if j.jogador_local:
-                if sons: mixer.Sound.play(mixer.Sound("lose.wav"))
-                print(f"- Jogador {jogadores.index(j)} (Tu) - {j.soma_dos_valores_das_cartas} Pontos - [{j.razao_perder}]")
-            else:
-                if aposta_em_jogador != jogadores.index(j):
-                    print(f"- Jogador {jogadores.index(j)} - {j.soma_dos_valores_das_cartas} Pontos - [{j.razao_perder}]")
-                else:
-                    print(f"- Jogador {jogadores.index(j)} (APOSTA) - {j.soma_dos_valores_das_cartas} Pontos - [{j.razao_perder}]")
-        #else:
-        #    print(f"- Mesa [{j.razao_perder}]")
-        sleep(0.75)
-    print("\n")
-    input("Continuar... ")
-    limparEcra()
-
-    profits = 0
-
-    print("------------------------")
-    if localPlayer in winners:
-        print(f"Parabéns, ganhaste a ronda!\n\nAposta: {aposta}$\nGanhos: +{floor(aposta * 1.5)}$")
-        dinheiro += floor(aposta * 1.5)
-        profits += floor(aposta * 1.5)
-    else:
-        print(f"Uh oh, perdeste a ronda!\n\nAposta: {aposta}$\nPerdas: -{aposta}$")
-        dinheiro -= aposta
-        profits -= aposta
-
-    if jogadores[aposta_em_jogador] in winners:
-        dinheiro += floor(aposta / 3)
-        profits += floor(aposta / 3)
-        print(f"\nO jogador no qual apostaste venceu o jogo, pelo que tens direito a +{floor(aposta / 3)}$ adicionais!")
-
-    aposta_em_jogador = 0
-
-    history_winner_value = 0
-    if localPlayer in winners: history_winner_value = 1
-    history_input_to_add = "{date:" + str(time.time()) + ";cards:" + str(len(localPlayer.cartas)) + ";points:" + str(localPlayer.soma_dos_valores_das_cartas) + ";profit:" + str(profits) + ";total-money:" + str(dinheiro) + ";result:" + str(history_winner_value) + ";bet:" + str(aposta) + "}"
-
-    with open('database.txt', 'w') as file: # Atualizar a base de dados com o valor atual de dinheiro
-        file.write(f"money={dinheiro}")
-
-    with open('database_history.txt', 'r') as file:
-        content = file.read().strip()
-
-    # Check if the file is empty or not
-    if content == "{}":
-        # File has only initial content '{}', replace it with the new entry
-        updated_content = history_input_to_add
-    else:
-        # File has content, append a comma and then the new entry
-        updated_content = f"{content[:-1]},{history_input_to_add}}}"
-
-    # Open the file in write mode to update it
-    with open('database_history.txt', 'w') as file:
-        file.write(updated_content)
-
-    input("Continuar... ")
